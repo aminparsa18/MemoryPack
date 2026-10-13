@@ -269,7 +269,10 @@ public partial class MemoryPackGenerator : IIncrementalGenerator
                 foreach (var item in runtime)
                 {
                     var filePath = Path.Combine(generatePath, item.Item1);
-                    if (!File.Exists(filePath))
+                    // Rewrite when the content differs, not only when missing: the generated classes
+                    // call runtime methods that newer generator versions add or change, so a runtime
+                    // file left over from an older version breaks them.
+                    if (!File.Exists(filePath) || File.ReadAllText(filePath) != item.Item2)
                     {
                         File.WriteAllText(filePath, item.Item2, new UTF8Encoding(false));
                     }
