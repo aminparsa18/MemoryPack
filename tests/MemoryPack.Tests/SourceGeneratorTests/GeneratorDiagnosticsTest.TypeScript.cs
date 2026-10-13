@@ -285,6 +285,30 @@ public partial class Hoge
         generatedCode.Should().Contain("reader.readMap(reader => reader.readString(), reader => reader.readInt32())");
     }
 
+    [Fact]
+    public void GenerateTypeScriptRuntimeNullableReadersInspectOnlyHasValueByte()
+    {
+        // Nullable<T> is blitted as HasValue(1 byte) + padding; the padding of a null value is not
+        // guaranteed to be zero, so reading the whole flag width as an integer can turn null into a value.
+        var runtime = CompileAndRead(
+            """
+            using MemoryPack;
+
+            [MemoryPackable]
+            [GenerateTypeScript]
+            public partial class Hoge
+            {
+                public long? Value { get; set; }
+            }
+            """,
+            "MemoryPackReader.ts");
+
+        runtime.Should().Contain("private readHasValue(size: number): boolean");
+        runtime.Should().Contain("if (!this.readHasValue(8))");
+        runtime.Should().NotContain("if (this.readInt64() == 0n)");
+        runtime.Should().NotContain("if (this.readUint64() == 0n)");
+    }
+
 
     class TypeScriptOptionProvider : AnalyzerConfigOptionsProvider
     {

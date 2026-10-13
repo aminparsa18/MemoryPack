@@ -549,6 +549,15 @@ export class MemoryPackReader {
         return this.readUint8() != 0;
     }
 
+    // C# Nullable<T> is blitted as a 1-byte HasValue followed by padding up to T's alignment. The
+    // padding bytes are not guaranteed to be zero (a null value can carry stale stack bytes there),
+    // so only the first byte may be inspected; `size` is the full flag width to skip.
+    private readHasValue(size: number): boolean {
+        const hasValue = this.dataView.getUint8(this.offset) != FALSE;
+        this.offset += size;
+        return hasValue;
+    }
+
     public readNullableBoolean(): boolean | null {
         if (this.readUint8() == FALSE) {
             this.offset += 1;
@@ -579,7 +588,7 @@ export class MemoryPackReader {
     }
 
     public readNullableUint16(): number | null {
-        if (this.readUint16() == FALSE) {
+        if (!this.readHasValue(2)) {
             this.offset += 2;
             return null;
         }
@@ -594,7 +603,7 @@ export class MemoryPackReader {
     }
 
     public readNullableUint32(): number | null {
-        if (this.readUint32() == FALSE) {
+        if (!this.readHasValue(4)) {
             this.offset += 4;
             return null;
         }
@@ -624,7 +633,7 @@ export class MemoryPackReader {
     }
 
     public readNullableInt16(): number | null {
-        if (this.readInt16() == FALSE) {
+        if (!this.readHasValue(2)) {
             this.offset += 2;
             return null;
         }
@@ -639,7 +648,7 @@ export class MemoryPackReader {
     }
 
     public readNullableInt32(): number | null {
-        if (this.readInt32() == FALSE) {
+        if (!this.readHasValue(4)) {
             this.offset += 4;
             return null;
         }
@@ -654,7 +663,7 @@ export class MemoryPackReader {
     }
 
     public readNullableInt64(): bigint | null {
-        if (this.readInt64() == 0n) {
+        if (!this.readHasValue(8)) {
             this.offset += 8;
             return null;
         }
@@ -669,7 +678,7 @@ export class MemoryPackReader {
     }
 
     public readNullableUint64(): bigint | null {
-        if (this.readUint64() == 0n) {
+        if (!this.readHasValue(8)) {
             this.offset += 8;
             return null;
         }
@@ -684,7 +693,7 @@ export class MemoryPackReader {
     }
 
     public readNullableFloat32(): number | null {
-        if (this.readUint32() == FALSE) {
+        if (!this.readHasValue(4)) {
             this.offset += 4;
             return null;
         }
@@ -699,7 +708,7 @@ export class MemoryPackReader {
     }
 
     public readNullableFloat64(): number | null {
-        if (this.readUint64() == 0n) {
+        if (!this.readHasValue(8)) {
             this.offset += 8;
             return null;
         }
@@ -833,7 +842,7 @@ export class MemoryPackReader {
     }
 
     public readNullableGuid(): string | null {
-        if (this.readInt32() == FALSE) {
+        if (!this.readHasValue(4)) {
             this.offset += 16;
             return null;
         }
@@ -862,7 +871,7 @@ export class MemoryPackReader {
     }
 
     public readNullableDateTimeOffset(): Date | null {
-        if (this.readInt64() == 0n) {
+        if (!this.readHasValue(8)) {
             this.offset += 16;
             return null;
         }
@@ -871,7 +880,7 @@ export class MemoryPackReader {
     }
 
     public readNullableDate(): Date | null {
-        if (this.readInt64() == 0n) {
+        if (!this.readHasValue(8)) {
             this.offset += 8;
             return null;
         }
