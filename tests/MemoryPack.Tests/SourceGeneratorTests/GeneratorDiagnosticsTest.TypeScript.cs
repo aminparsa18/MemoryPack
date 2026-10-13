@@ -245,6 +245,46 @@ public partial class Hoge
         generatedCode.Should().Contain("reader.readNullableDateTimeOffset()");
     }
 
+    [Fact]
+    public void GenerateTypeScriptReadOnlyCollections()
+    {
+        // IReadOnlyList<T>/IReadOnlyCollection<T>/IReadOnlyDictionary<K,V> used to throw MEMPACK031.
+        var generatedCode = CompileAndRead(
+            """
+            using System;
+            using System.Collections.Generic;
+            using MemoryPack;
+
+            [MemoryPackable]
+            [GenerateTypeScript]
+            public partial class Item
+            {
+                public int Id { get; set; }
+            }
+
+            [MemoryPackable]
+            [GenerateTypeScript]
+            public partial class Hoge
+            {
+                public IReadOnlyList<string> Names { get; set; }
+                public IReadOnlyList<Item> Items { get; set; }
+                public IReadOnlyCollection<double> Values { get; set; }
+                public IReadOnlyDictionary<string, int> Counts { get; set; }
+            }
+            """,
+            "Hoge.ts");
+
+        generatedCode.Should().Contain("names: string[] | null;");
+        generatedCode.Should().Contain("items: (Item | null)[] | null;");
+        generatedCode.Should().Contain("values: number[] | null;");
+        generatedCode.Should().Contain("counts: Map<string, number> | null;");
+        generatedCode.Should().Contain("writer.writeArray(value.names, (writer, x) => writer.writeString(x))");
+        generatedCode.Should().Contain("writer.writeArray(value.items, (writer, x) => Item.serializeCore(writer, x))");
+        generatedCode.Should().Contain("reader.readArray(reader => reader.readFloat64())");
+        generatedCode.Should().Contain("writer.writeMap(value.counts,");
+        generatedCode.Should().Contain("reader.readMap(reader => reader.readString(), reader => reader.readInt32())");
+    }
+
 
     class TypeScriptOptionProvider : AnalyzerConfigOptionsProvider
     {

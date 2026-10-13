@@ -78,6 +78,24 @@ public class InterfaceFormatterTest
         CollectionEqual(collection, default(IReadOnlyList<int>));
     }
 
+    // The TypeScript generator maps IReadOnlyList<T>/IReadOnlyCollection<T>/IReadOnlyDictionary<K,V>
+    // to the same array/Map code as List<T>/Dictionary<K,V>, which is only correct while the wire
+    // bytes are identical.
+    [Fact]
+    public void ReadOnlyInterfacesHaveSameWireFormatAsConcreteCollections()
+    {
+        var list = new List<string?> { "a", null, "ccc" };
+        var listBytes = MemoryPackSerializer.Serialize(list);
+        MemoryPackSerializer.Serialize<IReadOnlyList<string?>>(list).Should().Equal(listBytes);
+        MemoryPackSerializer.Serialize<IReadOnlyCollection<string?>>(list).Should().Equal(listBytes);
+
+        var dict = new Dictionary<string, int> { { "a", 1 }, { "b", 2 } };
+        var dictBytes = MemoryPackSerializer.Serialize(dict);
+        MemoryPackSerializer.Serialize<IReadOnlyDictionary<string, int>>(dict).Should().Equal(dictBytes);
+
+        MemoryPackSerializer.Serialize<IReadOnlyList<string>>(null).Should().Equal(MemoryPackSerializer.Serialize<List<string>>(null));
+    }
+
     [Fact]
     public void Dictionaries()
     {

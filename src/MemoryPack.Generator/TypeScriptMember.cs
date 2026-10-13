@@ -113,7 +113,7 @@ public class TypeScriptMember
 
         // is collection
 
-        var (collectionKind, collectionSymbol) = TypeMeta.ParseCollectionKind(symbol as INamedTypeSymbol, references);
+        var (collectionKind, collectionSymbol) = ParseTypeScriptCollectionKind(symbol as INamedTypeSymbol, references);
         switch (collectionKind)
         {
             case CollectionKind.Collection:
@@ -204,6 +204,31 @@ public class TypeScriptMember
                 ReadMethodTemplate = $"reader.read{primitiveType.BinaryOperationMethod}()"
             };
         }
+    }
+
+    // IReadOnlyList<T>/IReadOnlyCollection<T>/IReadOnlyDictionary<K,V> are serialized by
+    // InterfaceReadOnly{Collection,List,Dictionary}Formatter with exactly the same wire format as
+    // List<T> (collection header + elements) / Dictionary<K,V> (header + key/value pairs), so they
+    // map to the same TypeScript array / Map. They are declared as the interface itself, which does
+    // not implement ICollection<T>/IDictionary<K,V> and therefore is not seen by
+    // TypeMeta.ParseCollectionKind (shared with the C# emitter, so left untouched).
+    static (CollectionKind, INamedTypeSymbol?) ParseTypeScriptCollectionKind(INamedTypeSymbol? symbol, ReferenceSymbols references)
+    {
+        if (symbol is { IsGenericType: true })
+        {
+            var known = references.KnownTypes;
+            if (symbol.EqualsUnconstructedGenericType(known.System_Collections_Generic_IReadOnlyList_T) ||
+                symbol.EqualsUnconstructedGenericType(known.System_Collections_Generic_IReadOnlyCollection_T))
+            {
+                return (CollectionKind.Collection, symbol);
+            }
+            if (symbol.EqualsUnconstructedGenericType(known.System_Collections_Generic_IReadOnlyDictionary_T))
+            {
+                return (CollectionKind.Dictionary, symbol);
+            }
+        }
+
+        return TypeMeta.ParseCollectionKind(symbol, references);
     }
 
     TypeScriptTypeCore ConvertFromSymbol(ITypeSymbol typeSymbol, ReferenceSymbols reference, TypeScriptGenerateOptions options)
