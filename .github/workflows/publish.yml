@@ -1,0 +1,43 @@
+name: Publish-Patch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version: package version to publish. (sample 1.21.4.1)"
+        required: true
+      dry-run:
+        description: "dry-run: true = build, test and pack only, never push to nuget.org."
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # required for nuget.org trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test tests/MemoryPack.Tests/MemoryPack.Tests.csproj -c Release
+      - run: dotnet pack src/MemoryPack.Generator/MemoryPack.Generator.csproj -c Release -p:Version=${{ inputs.version }} -o ./publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nuget
+          path: ./publish
+          retention-days: 7
+      - name: NuGet login (OIDC -> short-lived API key)
+        if: ${{ !inputs.dry-run }}
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: apardev
+      - name: Push to nuget.org
+        if: ${{ !inputs.dry-run }}
+        run: dotnet nuget push ./publish/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json

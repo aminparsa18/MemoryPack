@@ -15,8 +15,12 @@
 
 		    <!-- NuGet -->
         <IsPackable>true</IsPackable>
-        <PackageTags>serializer</PackageTags>
-        <Description>Code generator for MemoryPack.</Description>
+        <PackageId>MemoryPack.Generator.DateTimeOffsetPatch</PackageId>
+        <Authors>aminparsa18;Cysharp</Authors>
+        <PackageProjectUrl>https://github.com/aminparsa18/MemoryPack</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/aminparsa18/MemoryPack</RepositoryUrl>
+        <PackageTags>serializer;memorypack;typescript;datetimeoffset</PackageTags>
+        <Description>Unofficial patched build of the MemoryPack source generator (based on Cysharp/MemoryPack 1.21.4) that adds DateTimeOffset support to the TypeScript generator (fixes MEMPACK031). Drop-in replacement for MemoryPack.Generator; see Cysharp/MemoryPack PR #459. Use together with the official MemoryPack.Core package instead of the MemoryPack meta package.</Description>
     </PropertyGroup>
 
     <ItemGroup>
