@@ -15,7 +15,8 @@
 
 		    <!-- NuGet -->
         <IsPackable>true</IsPackable>
-        <PackageId>MemoryPack.Generator.DateTimeOffsetPatch</PackageId>
+        <!-- Was MemoryPack.Generator.DateTimeOffsetPatch up to 1.21.4.2. -->
+        <PackageId>MemoryPack.Generator.Patched</PackageId>
         <Authors>aminparsa18;Cysharp</Authors>
         <PackageProjectUrl>https://github.com/aminparsa18/MemoryPack</PackageProjectUrl>
         <RepositoryUrl>https://github.com/aminparsa18/MemoryPack</RepositoryUrl>
