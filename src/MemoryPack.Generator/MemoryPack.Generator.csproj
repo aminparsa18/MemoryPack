@@ -19,8 +19,8 @@
         <Authors>aminparsa18;Cysharp</Authors>
         <PackageProjectUrl>https://github.com/aminparsa18/MemoryPack</PackageProjectUrl>
         <RepositoryUrl>https://github.com/aminparsa18/MemoryPack</RepositoryUrl>
-        <PackageTags>serializer;memorypack;typescript;datetimeoffset;ireadonlylist</PackageTags>
-        <Description>Unofficial patched build of the MemoryPack source generator (based on Cysharp/MemoryPack 1.21.4) that adds DateTimeOffset, IReadOnlyList, IReadOnlyCollection and IReadOnlyDictionary support to the TypeScript generator (fixes MEMPACK031 for those types). Drop-in replacement for MemoryPack.Generator; see Cysharp/MemoryPack PR #459. Use together with the official MemoryPack.Core package instead of the MemoryPack meta package.</Description>
+        <PackageTags>serializer;memorypack;typescript;datetimeoffset;ireadonlylist;record</PackageTags>
+        <Description>Unofficial patched build of the MemoryPack source generator (based on Cysharp/MemoryPack 1.21.4). TypeScript generator changes: DateTimeOffset, IReadOnlyList, IReadOnlyCollection and IReadOnlyDictionary support (fixes MEMPACK031 for those types; see Cysharp/MemoryPack PR #459); nullable readers that inspect only the HasValue byte, so a null with non-zero padding is not read as a value; runtime files rewritten when their content changes; and the opt-in MemoryPackGenerator_TypeScriptDictionaryAsRecord build property, which emits string/number-keyed dictionaries as Record instead of Map (same wire format). Drop-in replacement for MemoryPack.Generator; use together with the official MemoryPack.Core package instead of the MemoryPack meta package.</Description>
     </PropertyGroup>
 
     <ItemGroup>
