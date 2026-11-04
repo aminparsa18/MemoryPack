@@ -331,6 +331,40 @@ export class MemoryPackWriter {
         });
     }
 
+    // Same wire format as writeMap. Keys are passed as the strings Object.keys returns; the
+    // generated keyWriter converts them back for number-keyed records.
+    public writeRecord<V>(value: Record<string | number, V> | null, keyWriter: (writer: MemoryPackWriter, key: string) => void, valueWriter: (writer: MemoryPackWriter, value: V) => void): void {
+        if (value == null) {
+            this.writeNullCollectionHeader();
+            return;
+        }
+
+        const keys = Object.keys(value);
+        const len = keys.length;
+        this.writeCollectionHeader(len);
+        for (let i = 0; i < len; i++) {
+            const key = keys[i];
+            keyWriter(this, key);
+            valueWriter(this, value[key]);
+        }
+    }
+
+    public writeStringRecord(value: Record<string, string> | null): void {
+        if (value == null) {
+            this.writeNullCollectionHeader();
+            return;
+        }
+
+        const keys = Object.keys(value);
+        const len = keys.length;
+        this.writeCollectionHeader(len);
+        for (let i = 0; i < len; i++) {
+            const key = keys[i];
+            this.writeString(key);
+            this.writeString(value[key]);
+        }
+    }
+
     public writeSet<T>(value: Set<T> | null, elementWriter: (writer: MemoryPackWriter, element: T) => void): void {
         if (value == null) {
             this.writeNullCollectionHeader();
@@ -778,6 +812,51 @@ export class MemoryPackReader {
             const key = keyReader(this);
             const value = valueReader(this);
             result.set(key, value);
+        }
+
+        return result;
+    }
+
+    // Same wire format as readMap, decoded into a plain object. A "__proto__" key is defined as an
+    // own property: plain assignment would invoke the prototype setter and drop (or, for object
+    // values, install as prototype) the entry.
+    public readRecord<K extends string | number, V>(keyReader: (reader: MemoryPackReader) => K, valueReader: (reader: MemoryPackReader) => V): Record<K, V> | null {
+        const [ok, length] = this.tryReadCollectionHeader();
+        if (!ok) {
+            return null;
+        }
+
+        const result = {} as Record<K, V>;
+        for (let i = 0; i < length; i++) {
+            const key = keyReader(this);
+            const value = valueReader(this);
+            if (key === "__proto__") {
+                Object.defineProperty(result, key, { value, writable: true, enumerable: true, configurable: true });
+            } else {
+                result[key] = value;
+            }
+        }
+
+        return result;
+    }
+
+    // readRecord specialised for string -> string without per-call closures. Null keys/values
+    // become "" (see readRecord for "__proto__").
+    public readStringRecord(): Record<string, string> | null {
+        const [ok, length] = this.tryReadCollectionHeader();
+        if (!ok) {
+            return null;
+        }
+
+        const result: Record<string, string> = {};
+        for (let i = 0; i < length; i++) {
+            const key = this.readString() ?? "";
+            const value = this.readString() ?? "";
+            if (key === "__proto__") {
+                Object.defineProperty(result, key, { value, writable: true, enumerable: true, configurable: true });
+            } else {
+                result[key] = value;
+            }
         }
 
         return result;

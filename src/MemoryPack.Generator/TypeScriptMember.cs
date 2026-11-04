@@ -149,6 +149,12 @@ public class TypeScriptMember
                 }
             case CollectionKind.Dictionary:
                 {
+                    if (options.DictionaryAsRecord)
+                    {
+                        var record = TryConvertToRecord(collectionSymbol!.TypeArguments[0], collectionSymbol!.TypeArguments[1], references, options);
+                        if (record != null) return record;
+                    }
+
                     var keyType = ConvertToTypeScriptType(collectionSymbol!.TypeArguments[0], references, options);
                     var valueType = ConvertToTypeScriptType(collectionSymbol!.TypeArguments[1], references, options);
                     var keyWriter = string.Format(keyType.WriteMethodTemplate, "x");
@@ -204,6 +210,83 @@ public class TypeScriptMember
                 ReadMethodTemplate = $"reader.read{primitiveType.BinaryOperationMethod}()"
             };
         }
+    }
+
+    // MemoryPackGenerator_TypeScriptDictionaryAsRecord: a dictionary whose key maps to a TypeScript
+    // string (string, Guid) or number (8-32 bit integers, float, double) becomes `Record<K, V>`.
+    // Wire format is identical to the Map form (collection header + key/value pairs). Other key
+    // types (bigint, Date, enums, objects) return null and keep the Map form: a bigint/Date cannot
+    // be an object key without changing the value, and `Record<SomeEnum, V>` would claim that every
+    // enum member is present.
+    // string keys and (non-nullable) string values are coalesced to "" when null, so the record is
+    // `Record<string, string>` rather than `Record<string, string | null>`.
+    TypeScriptType? TryConvertToRecord(ITypeSymbol keySymbol, ITypeSymbol valueSymbol, ReferenceSymbols references, TypeScriptGenerateOptions options)
+    {
+        string keyTypeName;
+        string keyReader;
+        string keyWriter;
+        if (keySymbol.SpecialType == SpecialType.System_String)
+        {
+            keyTypeName = "string";
+            keyReader = "reader.readString() ?? \"\"";
+            keyWriter = "writer.writeString(x)";
+        }
+        else if (SymbolEqualityComparer.Default.Equals(keySymbol, references.KnownTypes.System_Guid))
+        {
+            keyTypeName = "string";
+            keyReader = "reader.readGuid()";
+            keyWriter = "writer.writeGuid(x)";
+        }
+        else if (keySymbol.TypeKind != TypeKind.Enum && keySymbol.SpecialType is
+            SpecialType.System_SByte or SpecialType.System_Byte or
+            SpecialType.System_Int16 or SpecialType.System_UInt16 or
+            SpecialType.System_Int32 or SpecialType.System_UInt32 or
+            SpecialType.System_Single or SpecialType.System_Double)
+        {
+            var keyType = ConvertToTypeScriptType(keySymbol, references, options);
+            keyTypeName = "number";
+            keyReader = string.Format(keyType.ReadMethodTemplate);
+            // object keys come back from Object.keys as strings
+            keyWriter = string.Format(keyType.WriteMethodTemplate, "Number(x)");
+        }
+        else
+        {
+            return null;
+        }
+
+        var valueType = ConvertToTypeScriptType(valueSymbol, references, options);
+        var valueTypeName = valueType.TypeName;
+        var valueReader = string.Format(valueType.ReadMethodTemplate);
+        var valueWriter = string.Format(valueType.WriteMethodTemplate, "x");
+
+        var isDeclaredNullableString = options.EnableNullableTypes && valueSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+        if (valueSymbol.SpecialType == SpecialType.System_String && !isDeclaredNullableString)
+        {
+            if (keySymbol.SpecialType == SpecialType.System_String)
+            {
+                // The common string -> string case gets dedicated runtime helpers: the generic
+                // readRecord allocates two arrow functions per call, which measured ~4% slower on a
+                // decode + consume benchmark (sandbox/TypeScriptBench).
+                return new TypeScriptType
+                {
+                    TypeName = "Record<string, string> | null",
+                    DefaultValue = "null",
+                    WriteMethodTemplate = "writer.writeStringRecord({0})",
+                    ReadMethodTemplate = "reader.readStringRecord()"
+                };
+            }
+
+            valueTypeName = "string";
+            valueReader = "reader.readString() ?? \"\"";
+        }
+
+        return new TypeScriptType
+        {
+            TypeName = $"Record<{keyTypeName}, {valueTypeName}> | null",
+            DefaultValue = "null",
+            WriteMethodTemplate = $"writer.writeRecord({{0}}, (writer, x) => {keyWriter}, (writer, x) => {valueWriter})",
+            ReadMethodTemplate = $"reader.readRecord(reader => {keyReader}, reader => {valueReader})"
+        };
     }
 
     // IReadOnlyList<T>/IReadOnlyCollection<T>/IReadOnlyDictionary<K,V> are serialized by

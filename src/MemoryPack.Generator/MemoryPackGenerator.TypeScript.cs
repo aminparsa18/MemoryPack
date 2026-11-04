@@ -16,6 +16,9 @@ public record TypeScriptGenerateOptions
     public string ImportExtension { get; set; } = default!;
     public bool ConvertPropertyName { get; set; } = true;
     public bool EnableNullableTypes { get; set; } = false;
+    // Emit dictionaries whose key maps to a TypeScript string/number as `Record<K, V>` (decoded
+    // straight into an object literal) instead of `Map<K, V>`. Same wire format either way.
+    public bool DictionaryAsRecord { get; set; } = false;
     public bool IsDesignTimeBuild { get; set; } = false;
 }
 

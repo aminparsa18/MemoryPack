@@ -1241,6 +1241,8 @@ Also the member name is automatically converted to camelCase. If you want to use
 
 `MemoryPackGenerator_TypeScriptEnableNullableTypes` allows C# nullable annotations to be reflected in TypeScript code. The default is false, making everything nullable.
 
+`MemoryPackGenerator_TypeScriptDictionaryAsRecord` (default false; add it as a `CompilerVisibleProperty` too) emits dictionaries as plain objects instead of `Map`s when the key maps to a TypeScript `string` (`string`, `Guid`) or `number` (8-32 bit integers, `float`, `double`): `Dictionary<string, string>` becomes `Record<string, string> | null`, read and written with `readStringRecord`/`writeStringRecord`, and other such dictionaries use `readRecord`/`writeRecord`. The wire format is unchanged. `string` keys, and `string` values unless declared `string?` with nullable types enabled, decode a null as `""`. `long`/`ulong`, enum, `DateTime` and object keys keep the `Map` form. Record keys are written in `Object.keys` order, which puts integer-like keys first in ascending order, so the re-encoded entry order can differ from the received order.
+
 Streaming Serialization
 ---
 `MemoryPack.Streaming` provides `MemoryPackStreamingSerializer`, which adds additional support for serializing and deserializing collections with streams.

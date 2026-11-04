@@ -162,6 +162,11 @@ public partial class MemoryPackGenerator : IIncrementalGenerator
                     enableNullableTypes = "false";
                 }
 
+                if (!configOptions.GlobalOptions.TryGetValue("build_property.MemoryPackGenerator_TypeScriptDictionaryAsRecord", out var dictionaryAsRecord))
+                {
+                    dictionaryAsRecord = "false";
+                }
+
                 if (!bool.TryParse(convertProp, out var convert)) convert = true;
 
                 if (path == null) return null;
@@ -172,6 +177,7 @@ public partial class MemoryPackGenerator : IIncrementalGenerator
                     ImportExtension = ext,
                     ConvertPropertyName = convert,
                     EnableNullableTypes = bool.TryParse(enableNullableTypes, out var enabledNullableTypesParsed) && enabledNullableTypesParsed,
+                    DictionaryAsRecord = bool.TryParse(dictionaryAsRecord, out var dictionaryAsRecordParsed) && dictionaryAsRecordParsed,
                     IsDesignTimeBuild = isDesignTimeBuild
                 };
             });
