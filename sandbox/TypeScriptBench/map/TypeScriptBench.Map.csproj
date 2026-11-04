@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Same models as ../TypeScriptBench.csproj, generated with the default Map emission into
+         ../ts/generated-map (the ADR-0216 baseline). -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="../Models.cs" Link="Models.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptOutputDirectory" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptImportExtension" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptConvertPropertyName" />
+        <CompilerVisibleProperty Include="MemoryPackGenerator_TypeScriptEnableNullableTypes" />
+        <CompilerVisibleProperty Include="DesignTimeBuild" />
+    </ItemGroup>
+    <PropertyGroup>
+        <MemoryPackGenerator_TypeScriptOutputDirectory>$(MSBuildProjectDirectory)/../ts/generated-map</MemoryPackGenerator_TypeScriptOutputDirectory>
+        <MemoryPackGenerator_TypeScriptImportExtension>.js</MemoryPackGenerator_TypeScriptImportExtension>
+        <MemoryPackGenerator_TypeScriptConvertPropertyName>true</MemoryPackGenerator_TypeScriptConvertPropertyName>
+        <MemoryPackGenerator_TypeScriptEnableNullableTypes>false</MemoryPackGenerator_TypeScriptEnableNullableTypes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\MemoryPack.Core\MemoryPack.Core.csproj" />
+        <ProjectReference Include="..\..\..\src\MemoryPack.Generator\MemoryPack.Generator.csproj">
+            <OutputItemType>Analyzer</OutputItemType>
+            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+        </ProjectReference>
+    </ItemGroup>
+
+</Project>
