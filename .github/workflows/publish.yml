@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "version: package version to publish. (sample 1.21.4.1)"
+        description: "version: package version to publish. (sample 1.22.0.1)"
         required: true
       dry-run:
         description: "dry-run: true = build, test and pack only, never push to nuget.org."
